@@ -158,6 +158,7 @@ def usage():
     -------------- 'stat /path' for stat the file info(md5, dlink...)
     -------------- 'get /path /savepath' for download the file ......
     -------------- 'offline'    for see the offline tasklist --------
+    -------------- 'm murl /savepath' add magnet download tasklist --
     -------------- 'q'          for quit this program      ----------
     -------------- 'h'          for Help (this HelpMessage)----------
     '''
@@ -179,8 +180,16 @@ def do(c, pan):
         sd  = c.split()[2]
         pan.add_offline_task(surl, sd)
     elif c.startswith('get '):
-        f  = c.split()[1]
-        s  = c.split()[2]
+        f_s = re.findall("""get\s+(["']{0,1}[^"']+["']{0,1})\s+(["']{0,1}[^"']+["']{0,1})""", c)
+        if not f_s:
+            print "input error, %s"% c
+            usage()
+            return
+        f = f_s[0][0].replace("'", '').replace('"','')
+        s = f_s[0][1].replace("'", '').replace('"','')
+
+        #f  = c.split()[1]
+        #s  = c.split()[2]
         pan.download(f, s)
 
     elif c == 'q':
