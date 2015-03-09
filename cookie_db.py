@@ -25,11 +25,16 @@ def get_firefox_cookie_file():
         return False
     return cookie_file_path
 
-def get_cookie_from_db(cookie_db_file, host):
+def get_cookie_from_db(host, cookie_db_file=None, like=False):
     cookies=''
+    if not cookie_db_file:
+        cookie_db_file = get_firefox_cookie_file()
+    sql_cmd="select name,value from moz_cookies where host = '%s';"% host
+    if like:
+        sql_cmd="select name,value from moz_cookies where host like '%%%s';"% host
     conn = sqlite3.connect(cookie_db_file)
     c = conn.cursor()
-    sql_cmd="select name,value from moz_cookies where host = '%s';"% host
+
     """
     # one row
     (0, u'id', u'INTEGER', 0, None, 1)
@@ -46,13 +51,10 @@ def get_cookie_from_db(cookie_db_file, host):
     """
     for row in c.execute(sql_cmd):
         cookies=cookies+row[0]+'='+row[1]+'; '
-        #print cookies
     return cookies
 
 
-
 if __name__ == "__main__":
-    ff_cookie_sqlit_file = get_firefox_cookie_file()
-    cookies = get_cookie_from_db(ff_cookie_sqlit_file, '.baidu.com')
+    cookies = get_cookie_from_db('.baidu.com')
+    cookies = get_cookie_from_db('.baidu.com', None, True)
     print cookies
-

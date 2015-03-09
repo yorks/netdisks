@@ -43,8 +43,8 @@ class BAIDU(object):
             if os.path.isfile( ff_cookie_file_path ):
                 print "Input error, you iput the file not exist or not a file!"
                 sys.exit(1)
-        baidu_cookies = cookie_db.get_cookie_from_db(ff_cookie_file_path, '.baidu.com')
-        baidu_pan_cookies = cookie_db.get_cookie_from_db(ff_cookie_file_path, 'pan.baidu.com')
+        baidu_cookies = cookie_db.get_cookie_from_db( '.baidu.com', ff_cookie_file_path)
+        baidu_pan_cookies = cookie_db.get_cookie_from_db( 'pan.baidu.com', ff_cookie_file_path)
         cookies = baidu_cookies + baidu_pan_cookies
         self.cookies = cookies
         print "Got cookie from the firefox sqlit file."
