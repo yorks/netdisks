@@ -14,55 +14,16 @@ import json
 
 
 import cookie_db
+from  utils import PAN
+from  utils import sizeof_fmt
 
 verbose=False
 
 
-class BAIDU(object):
-    def __init__(self, cookies=None):
-        self.server = 'http://pan.baidu.com'
-        self.cookies = cookies
-        if not self.cookies:
-            self._get_cookie()
-
-        self.headers = {
-            'User-Agent':'Mozilla/5.0 (X11; Linux i686; rv:18.0) Gecko/20100101 Firefox/18.0',
-            'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Referer':'http://pan.baidu.com/disk/home',
-            'Cookie':'%s'% self.cookies
-            }
-
-        self.user = {}
-        self.offline_status = {'1':'downloading', '0':'done'}
-
-    def _get_cookie(self):
-        cookies=''
-        ff_cookie_file_path = cookie_db.get_firefox_cookie_file()
-        if not ff_cookie_file_path:
-            ff_cookie_file_path = raw_input('cannot found firefox cookie file, pls input its abs path:')
-            if os.path.isfile( ff_cookie_file_path ):
-                print "Input error, you iput the file not exist or not a file!"
-                sys.exit(1)
-        baidu_cookies = cookie_db.get_cookie_from_db( '.baidu.com', ff_cookie_file_path)
-        baidu_pan_cookies = cookie_db.get_cookie_from_db( 'pan.baidu.com', ff_cookie_file_path)
-        cookies = baidu_cookies + baidu_pan_cookies
-        self.cookies = cookies
-        print "Got cookie from the firefox sqlit file."
-        print self.cookies
-
-    def _request(self, url, data=None):
-        if verbose: print "request url[%s]"% url
-        if data:
-            self.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
-            self.headers['Content-Length'] = '%d'% len(data)
-            req = urllib2.Request(url=url, data=data, headers=self.headers)
-        else:
-            if 'Content-Type' in self.headers:del self.headers['Content-Type']
-            if 'Content-Length' in self.headers:del self.headers['Content-Length']
-            req=urllib2.Request(url=url, headers=self.headers)
-
-        conn = urllib2.urlopen(req)
-        return conn
+class BAIDU(PAN):
+    def __init__(self, cookie=None):
+        server='http://pan.baidu.com'
+        PAN.__init__(self, server, cookie)
 
     def check_login(self):
         url = self.server + '/disk/home'
@@ -79,7 +40,8 @@ class BAIDU(object):
 
     def list_file(self, path='/'):
         path = urllib.quote( path )
-        url = self.server + '/api/list?channel=chunlei&clienttype=0&web=1&num=100&page=1&dir='+path+'&order=time&desc=1&showempty=0&_=1415186792830&bdstoken='+self.user['bdstoken']+'&channel=chunlei&clienttype=0&web=1&app_id=250528'
+        url = self.server+'/api/list?channel=chunlei&clienttype=0&web=1&num=100&page=1&dir='+path+'&order=time&desc=1&showempty=0&_=1415186792830&bdstoken='+self.user['bdstoken']+'&channel=chunlei&clienttype=0&web=1&app_id=250528'
+
         conn = self._request( url )
         html = conn.read()
         foo = json.loads( html )
@@ -109,7 +71,9 @@ class BAIDU(object):
         conn = self._request( url, pdata )
         print conn.read()
 
-    def meta(self, file_list):
+    def meta(self, file_path):
+        file_list = []
+        file_list.append( file_path )
         url = self.server + '/api/filemetas?blocks=0&dlink=1&method=filemetas&channel=chunlei&clienttype=0&web=1&app_id=250528&bdstoken='+self.user['bdstoken']
         data = {'target':json.dumps(file_list)}
         pdata = urllib.urlencode( data )
@@ -117,13 +81,13 @@ class BAIDU(object):
         jdata = json.loads(conn.read())
         for f in jdata['info']:
             try:
-                print f['server_filename']
+                print f['server_filename'],
 
                 ltime=time.localtime(float(f['server_mtime']))
                 timeStr=time.strftime("%Y-%m-%d %H:%M:%S", ltime)
-                print timeStr
+                print timeStr,
                 #print f['server_mtime']
-                print f['size'] / 1024 / 1024, "MB"
+                print sizeof_fmt( f['size'] ),
 
                 print f['md5']
                 print f['dlink']
@@ -136,8 +100,7 @@ class BAIDU(object):
         pass
 
     def download(self, file_path, save_path):
-        file_list = [ file_path ]
-        jdata = self.meta( file_list )
+        jdata = self.meta( file_path )
         url = ''
         for f in jdata['info']:
             url = f['dlink']
@@ -151,53 +114,6 @@ class BAIDU(object):
         import os
         os.system(cmd)
 
-def usage():
-    msg = '''
-    ===============Please follow the belove Command==================
-    -------------- 'ls /path'   for list file&dir  ------------------
-    -------------- 'stat /path' for stat the file info(md5, dlink...)
-    -------------- 'get /path /savepath' for download the file ......
-    -------------- 'offline'    for see the offline tasklist --------
-    -------------- 'm murl /savepath' add magnet download tasklist --
-    -------------- 'q'          for quit this program      ----------
-    -------------- 'h'          for Help (this HelpMessage)----------
-    '''
-    print msg
-
-def do(c, pan):
-    if c.startswith('ls '):
-        d = c.replace('ls ', '')
-        pan.list_file(d)
-
-    elif c.startswith('stat '):
-        f = c.replace('stat ', '')
-        flist = [ f ]
-        pan.meta(flist)
-    elif c == 'offline':
-        pan.list_offline_download()
-    elif c.startswith('m '):
-        surl = c.split()[1]
-        sd  = c.split()[2]
-        pan.add_offline_task(surl, sd)
-    elif c.startswith('get '):
-        f_s = re.findall("""get\s+(["']{0,1}[^"']+["']{0,1})\s+(["']{0,1}[^"']+["']{0,1})""", c)
-        if not f_s:
-            print "input error, %s"% c
-            usage()
-            return
-        f = f_s[0][0].replace("'", '').replace('"','')
-        s = f_s[0][1].replace("'", '').replace('"','')
-
-        #f  = c.split()[1]
-        #s  = c.split()[2]
-        pan.download(f, s)
-
-    elif c == 'q':
-        sys.exit(1)
-    else:
-        print "Unkonw command!"
-        usage()
-
 if __name__ == "__main__":
     try:
         bd = BAIDU(sys.argv[1])
@@ -207,7 +123,5 @@ if __name__ == "__main__":
     if not bd.check_login():
         sys.exit(1)
     print bd.user['username']
-    while True:
-        c=raw_input('>>>')
-        do(c, bd)
+    bd.do()
 
