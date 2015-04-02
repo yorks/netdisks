@@ -71,6 +71,15 @@ class BAIDU(PAN):
         conn = self._request( url, pdata )
         print conn.read()
 
+    def quota(self):
+        url = self.server + '/api/quota?bdstoken='+self.user['bdstoken']+'&channel=chunlei&clienttype=0&web=1&app_id=250528'
+        data = {'method':'quota'}
+        pdata = urllib.urlencode( data )
+        conn  = self._request(url, pdata)
+        jdata = json.loads( conn.read() )
+        ''' {"errno":0,"used":431477856150,"total":2322818138112,"request_id":9045033441787514765} '''
+        print sizeof_fmt( jdata['used'] ), '/', sizeof_fmt( jdata['total'] )
+
     def meta(self, file_path):
         file_list = []
         file_list.append( file_path )
@@ -122,6 +131,7 @@ if __name__ == "__main__":
 
     if not bd.check_login():
         sys.exit(1)
-    print bd.user['username']
+    print bd.user['username'],
+    bd.quota()
     bd.do()
 
