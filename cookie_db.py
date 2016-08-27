@@ -3,7 +3,11 @@
 
 import os
 import sys
-import sqlite3
+try:
+    import sqlite3
+except:
+    print "sqlit3 module not found"
+    sqlite3=None
 
 def get_firefox_cookie_file():
     firefox_dir=os.path.expanduser('~/.mozilla/firefox/')
@@ -32,6 +36,8 @@ def get_cookie_from_db(host, cookie_db_file=None, like=False):
     sql_cmd="select name,value from moz_cookies where host = '%s';"% host
     if like:
         sql_cmd="select name,value from moz_cookies where host like '%%%s';"% host
+    if sqlite3 is None:
+        return ''
     conn = sqlite3.connect(cookie_db_file)
     c = conn.cursor()
 
