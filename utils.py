@@ -82,12 +82,16 @@ class PAN(object):
     def download(self, file_path, save_path):
         pass
 
+    def dowload_dir(self, file_dir, save_dir):
+        pass
+
     def usage(self):
         msg = '''
         ===============Please follow the belove Command==================
         -------------- 'ls /path'   for list file&dir  ------------------
         -------------- 'stat /path' for stat the file info(md5, dlink...)
         -------------- 'get /path /savepath' for download the file ......
+        -------------- 'getd /path /savepath' for download the dir ......
         -------------- 'offline'    for see the offline tasklist --------
         -------------- 'm murl /savepath' add magnet download tasklist --
         -------------- 'q'          for quit this program      ----------
@@ -98,7 +102,7 @@ class PAN(object):
     def parse_input(self, c, cnt=2):
         re_str="""(ls|list|stat)\s+(["']{0,1}[^"']+["']{0,1})"""
         if cnt==3:
-            re_str="""(get|g|m)\s+(["']{0,1}[^"']+["']{0,1})\s+(["']{0,1}[^"']+["']{0,1})"""
+            re_str="""(get|g|m|getd)\s+(["']{0,1}[^"']+["']{0,1})\s+(["']{0,1}[^"']+["']{0,1})"""
         what_arg = re.findall(re_str, c)
         if not what_arg:
             print "Input error"
@@ -133,6 +137,15 @@ class PAN(object):
             f = f_s[0][1].replace("'", '').replace('"','')
             s = f_s[0][2].replace("'", '').replace('"','')
             self.download(f, s)
+
+        elif cmd in ['getd']:
+            what_arg = self.parse_input(c, 3)
+            f_s = what_arg
+            if not f_s:
+                return False
+            f = f_s[0][1].replace("'", '').replace('"','')
+            s = f_s[0][2].replace("'", '').replace('"','')
+            self.dowload_dir(f, s)
 
         elif cmd in ['m']:
             what_arg = self.parse_input(c, 3)
