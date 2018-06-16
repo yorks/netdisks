@@ -217,9 +217,11 @@ class BAIDU(PAN):
         headers = ["Cookie: %s"% self.cookies,  "User-Agent: netdisk;5.3.4.5;PC;PC-Windows;5.1.2600;WindowsBaiduYunGuanJia", "Referer: http://pan.baidu.com/disk/home"]
         return headers
 
-    def mk_aria2c(self, fpath, auth_url):
+    def mk_aria2c(self, fpath, auth_url, save_dir=''):
         # http://username:password@domain:6800/jsonrpc
+        # http://token:password@domain:6800/jsonrpc
         user_pass = auth_url.split('@')[0].split('//')[1]
+        user = user_pass.split(':')[0]
         auth = base64.b64encode(user_pass).decode('utf-8')
         url  = auth_url.replace(user_pass+'@', '')
 
@@ -227,12 +229,27 @@ class BAIDU(PAN):
         f = jdata['info'][0]
         dlink = f['dlink']
         name  = f['server_filename']
+        sdir = None
+
+        if save_dir and self.aria2c_default_dir:
+            sdir = self.aria2c_default_dir + '/' + save_dir
+
         rpc_data = {"jsonrpc": "2.0","method": "aria2.addUri", "id": int(time.time()),
                     "params": [ [dlink], {"out": name, "header": self.mk_aria2c_header()}]
-                    };
+        }
+        if sdir:
+            rpc_data['params'][1]['dir'] = sdir
+
+        if user == 'token':
+            ''' {"jsonrpc":"2.0","method":"..","id":1,"params":["token:password"], ...}:""'''
+            rpc_data['params'].insert(0, user_pass)
+
         jsonreq = json.dumps(rpc_data)
         #print jsonreq
-        req = urllib2.Request(url, data=jsonreq, headers={'Authorization': 'Basic %s'% auth})
+        if user == 'token':
+            req = urllib2.Request(url, data=jsonreq)
+        else:
+            req = urllib2.Request(url, data=jsonreq, headers={'Authorization': 'Basic %s'% auth})
         c = urllib2.urlopen(req)
         print c.read()
 
@@ -240,7 +257,9 @@ class BAIDU(PAN):
     def upload(self, file_path):
         pass
 
-    def download(self, file_path, save_path):
+    def download(self, file_path, save_dir=''):
+        if self.aria2c_rpc_url:
+            return self.mk_aria2c(file_path, self.aria2c_rpc_url, save_dir)
         if save_path.startswith('http'):
             return self.mk_aria2c(file_path, save_path)
 
@@ -258,7 +277,7 @@ class BAIDU(PAN):
         import os
         os.system(cmd)
 
-    def dowload_dir(self, file_dir, save_dir):
+    def dowload_dir(self, file_dir, save_dir=''):
         dir_list = self.list_file(file_dir)
         for f in dir_list['list']:
             if f['isdir'] == 1:
