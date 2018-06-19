@@ -22,6 +22,7 @@ verbose=False
 
 
 class BAIDU(PAN):
+    name = 'netdisk-baidu'
     def __init__(self, cookie=None):
         server='http://pan.baidu.com'
         PAN.__init__(self, server, cookie)

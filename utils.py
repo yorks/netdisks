@@ -17,6 +17,7 @@ verbose=False
 
 
 class PAN(object):
+    name = 'netdisk-common-pan'
     def __init__(self, server, cookies=None):
         self.server = server
         self.cookies = cookies
@@ -34,6 +35,38 @@ class PAN(object):
         self.offline_status = {'1':'downloading', '0':'done'}
         self.aria2c_rpc_url = None
         self.aria2c_default_dir = None
+        self.confpath = '/tmp/%s.json'% self.name
+        self.config = {}
+        self.load_config()
+        print "opening index...."
+
+    def _load_config(self):
+        try:
+            fp = open(self.confpath, 'r')
+            content = fp.read()
+            fp.close()
+            return json.loads( content )
+        except Exception, e:
+            return {}
+
+    def _save_config(self):
+        try:
+            fw = open(self.confpath, 'w')
+            fw.write(json.dumps(self.config))
+            fw.close()
+            return True
+        except:
+            return False
+
+    def load_config(self):
+        self.config = self._load_config()
+        url = self.config.get('aria2c_rpc_url', '')
+        if url:
+            self.set_aria2c_rpc_url(url)
+
+    def save_config(self):
+        self.config['aria2c_rpc_url'] =  self.aria2c_rpc_url
+        self._save_config()
 
     def _get_cookie(self):
         cookies=''
@@ -119,7 +152,8 @@ class PAN(object):
             print "wrong aria2c rpc url"
             return False
         self.aria2c_rpc_url = url
-        print "OK, the default save dir is:", self.aria2c_default_dir
+        self.save_config()
+        print "OK, the arai2c default save dir is:", self.aria2c_default_dir
         return True
 
     def print_i(self):
@@ -247,7 +281,11 @@ class PAN(object):
 
     def do(self):
         while 1:
-            c = raw_input('>>>')
+            try:
+                c = raw_input('>>>')
+            except:
+                print "quit"
+                break
             self._do( c )
 
 # https://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
