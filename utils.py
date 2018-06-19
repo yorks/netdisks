@@ -121,6 +121,8 @@ class PAN(object):
     def dowload_dir(self, file_dir, save_dir=''):
         pass
 
+    def rename(self, path, newname):
+        pass
 
     def get_aria2c_options(self, auth_url):
         user_pass = auth_url.split('@')[0].split('//')[1]
@@ -176,6 +178,7 @@ class PAN(object):
         -------------- 'stat /path' for stat the file info(md5, dlink...)
         -------------- 'get  /path /savepath' for download the file .....
         -------------- 'getd /path /savepath' for download the dir ......
+        -------------- 'rename /path newname' for rename path name ......
         -------------- 'offline'    for see the offline tasklist --------
         -------------- 'm murl /savepath' add magnet download tasklist --
         -------------- 'set aria2cURL url'   set aria2cRpcUrl  ----------
@@ -192,9 +195,9 @@ class PAN(object):
     def parse_input(self, c, cnt=2, quiet=False):
         re_str="""(ls|list|stat|get|getd)\s+(["']{0,1}[^"']+["']{0,1})"""
         if cnt==3:
-            re_str="""(get|g|m|getd|set)\s+(["']{0,1}[^"']+["']{0,1})\s+(["']{0,1}[^"']+["']{0,1})"""
+            re_str="""(get|g|m|getd|set|rename)\s+(["']{0,1}[^"']+["']{0,1})\s+(["']{0,1}[^"']+["']{0,1})"""
         what_arg = re.findall(re_str, c)
-        if not what_arg and quiet:
+        if not what_arg and not  quiet:
             print "Input error"
             self.usage()
             return False
@@ -243,6 +246,15 @@ class PAN(object):
                 self.download(f, s)
             elif cmd == 'getd':
                 self.dowload_dir(f, s)
+
+        elif cmd in ['rename']:
+            what_arg = self.parse_input(c, 3)
+            f_s = what_arg
+            if not f_s:
+                return False
+            f = f_s[0][1].replace("'", '').replace('"','')
+            s = f_s[0][2].replace("'", '').replace('"','')
+            self.rename(f, s)
 
         elif cmd in ['m']:
             what_arg = self.parse_input(c, 3)

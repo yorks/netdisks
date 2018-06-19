@@ -132,6 +132,19 @@ class BAIDU(PAN):
             if not retonly:print f['path']
         return foo
 
+    def rename(self, path, newname):
+        flist=[{"path":path, "newname":newname}]
+        #data = {'filelist':flist }
+        data = {'filelist':json.dumps(flist)}
+        url = self.server + '/api/filemanager?opera=rename&async=2&onnest=fail&channel=chunlei&web=1&app_id=250528&clienttype=0&bdstoken='+self.user['bdstoken']
+        print data
+        pdata = urllib.urlencode( data )
+        print url
+        print pdata
+        conn = self._request( url, pdata )
+        print conn.read()
+
+
     def list_offline_download(self):
         url = self.server + '/rest/2.0/services/cloud_dl?bdstoken='+self.user['bdstoken']+'&need_task_info=1&status=255&start=0&limit=10&method=list_task&app_id=250528&t=1415191187214&channel=chunlei&clienttype=0&web=1'
         conn = self._request( url )
