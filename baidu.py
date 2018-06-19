@@ -29,8 +29,12 @@ class BAIDU(PAN):
 
     def check_login(self):
         url = self.server + '/disk/home'
-        conn = self._request( url )
-        html = conn.read()
+        try:
+            conn = self._request( url )
+            html = conn.read()
+        except Exception, e:
+            print "please open url: https://pan.baidu.com by firefox and retry"
+            return False
         try:
             self.user['uk'] = re.findall('"uk":([0-9]+),', html)[0]
             self.user['username'] = re.findall('"username":"([^"]+)"', html)[0]

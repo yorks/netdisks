@@ -16,13 +16,10 @@ def get_firefox_cookie_file():
         dir_list = os.listdir(firefox_dir)
         for d in dir_list:
             cookie_dir=os.path.join(firefox_dir,d)
-            if os.path.isdir(cookie_dir) and d.endswith('default'):
+            if os.path.isdir(cookie_dir):
                 cookie_file_path=os.path.join(cookie_dir,'cookies.sqlite')
-                if not os.path.isfile(cookie_file_path):
-                    raise "cookie file not exist!"
-                break
-            else:
-                continue
+                if os.path.isfile(cookie_file_path):
+                    break
     except:
         return False
     if not cookie_file_path:
